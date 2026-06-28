@@ -197,14 +197,13 @@ h3 {
 
 .library-layout {
   display: grid;
-  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) 290px;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(330px, 380px);
   gap: 18px;
   align-items: start;
 }
 
 .article-browser,
 .reader-panel,
-.context-panel,
 .record-panel,
 .review-card {
   border: 1px solid var(--line);
@@ -214,8 +213,21 @@ h3 {
 }
 
 .article-browser,
-.context-panel {
+.context-panel > section {
   padding: 16px;
+}
+
+.context-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.context-panel > section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
 }
 
 .pdf-dropzone {
@@ -592,6 +604,16 @@ h3 {
   border-top: 1px solid var(--line);
 }
 
+.side-summary {
+  margin-top: 0;
+  padding-top: 16px;
+  border-top: 0;
+}
+
+.side-summary textarea {
+  min-height: 130px;
+}
+
 .ai-helper {
   margin-top: 16px;
   border: 1px solid var(--line);
@@ -697,11 +719,6 @@ button:focus-visible {
 .phrase-chip small {
   color: var(--muted);
   font-size: 12px;
-}
-
-.context-panel {
-  display: grid;
-  gap: 18px;
 }
 
 .compact {

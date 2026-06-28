@@ -895,76 +895,77 @@ function App() {
                   ))}
                 </div>
 
-                <section className="selection-tools">
-                  <div className="lookup-panel">
-                    <div className="section-heading compact">
-                      <h3>单词查询</h3>
-                      {wordLookup && <span>{wordLookup.alreadySaved ? "已存" : "可存"}</span>}
-                    </div>
-                    {!wordLookup ? (
-                      <p className="muted-text">点击正文中的单词，可以查看释义并选择是否加入生词本。</p>
-                    ) : (
-                      <div className="lookup-content">
-                        <strong>{wordLookup.word}</strong>
-                        <p>{wordLookup.meaningZh}</p>
-                        <p className="sentence">"{wordLookup.sentence}"</p>
-                        <button
-                          className="primary-button small"
-                          disabled={wordLookup.alreadySaved}
-                          onClick={() => {
-                            addWord(wordLookup.word);
-                            setWordLookup((item) => item ? { ...item, alreadySaved: true } : item);
-                          }}
-                          type="button"
-                        >
-                          {wordLookup.alreadySaved ? "已加入生词本" : "加入生词本"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+              </article>
 
-                  <div className="lookup-panel">
-                    <div className="section-heading compact">
-                      <h3>句子理解</h3>
-                      <span>语法</span>
-                    </div>
-                    {!sentenceLookup ? (
-                      <p className="muted-text">选中一句英文，可以查看中文参考和语法结构说明。</p>
-                    ) : (
-                      <div className="lookup-content">
-                        <p className="sentence">"{sentenceLookup.sentence}"</p>
-                        <strong>中文参考</strong>
-                        <p>{sentenceLookup.meaningZh}</p>
-                        <strong>语法结构</strong>
-                        <ul className="grammar-list">
-                          {sentenceLookup.grammar.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+              <aside className="context-panel">
+                <section className="lookup-panel">
+                  <div className="section-heading compact">
+                    <h3>单词查询</h3>
+                    {wordLookup && <span>{wordLookup.alreadySaved ? "已存" : "可存"}</span>}
                   </div>
+                  {!wordLookup ? (
+                    <p className="muted-text">点击正文中的单词，可以查看释义并选择是否加入生词本。</p>
+                  ) : (
+                    <div className="lookup-content">
+                      <strong>{wordLookup.word}</strong>
+                      <p>{wordLookup.meaningZh}</p>
+                      <p className="sentence">"{wordLookup.sentence}"</p>
+                      <button
+                        className="primary-button small"
+                        disabled={wordLookup.alreadySaved}
+                        onClick={() => {
+                          addWord(wordLookup.word);
+                          setWordLookup((item) => item ? { ...item, alreadySaved: true } : item);
+                        }}
+                        type="button"
+                      >
+                        {wordLookup.alreadySaved ? "已加入生词本" : "加入生词本"}
+                      </button>
+                    </div>
+                  )}
                 </section>
 
-                <section className="summary-box">
+                <section className="lookup-panel">
+                  <div className="section-heading compact">
+                    <h3>句子理解</h3>
+                    <span>语法</span>
+                  </div>
+                  {!sentenceLookup ? (
+                    <p className="muted-text">选中一句英文，可以查看中文参考和语法结构说明。</p>
+                  ) : (
+                    <div className="lookup-content">
+                      <p className="sentence">"{sentenceLookup.sentence}"</p>
+                      <strong>中文参考</strong>
+                      <p>{sentenceLookup.meaningZh}</p>
+                      <strong>语法结构</strong>
+                      <ul className="grammar-list">
+                        {sentenceLookup.grammar.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </section>
+
+                <section className="summary-box side-summary">
                   <div className="section-heading">
-                    <div><p className="eyebrow">After Reading</p><h3>写一个小 summary</h3></div>
-                    <button className="secondary-button" onClick={saveSummary} type="button">保存</button>
+                    <div><p className="eyebrow">After Reading</p><h3>写 summary</h3></div>
+                    <button className="secondary-button small" onClick={saveSummary} type="button">保存</button>
                   </div>
                   <div className="prompt-row">
-                    <span>What is this article mainly about?</span>
-                    <span>What is one idea you remember?</span>
-                    <span>What do you think about it?</span>
+                    <span>Main idea?</span>
+                    <span>One detail?</span>
+                    <span>Your thought?</span>
                   </div>
                   <textarea value={summaryText} onChange={(event) => setSummaryText(event.target.value)} rows="6" placeholder="Write 3-5 sentences in English..." />
                   <div className="ai-helper">
                     <div className="section-heading">
-                      <div><p className="eyebrow">Prototype AI Helper</p><h3>查看 summary 修改示例</h3></div>
-                      <button className="primary-button" onClick={() => setAiSuggestion(buildAiSuggestion(summaryText, selectedArticle))} type="button">查看 AI 修改示例</button>
+                      <div><p className="eyebrow">Prototype AI Helper</p><h3>修改示例</h3></div>
+                      <button className="primary-button small" onClick={() => setAiSuggestion(buildAiSuggestion(summaryText, selectedArticle))} type="button">查看示例</button>
                     </div>
                     <div className="ai-result">
                       {!aiSuggestion ? (
-                        <p>当前为原型模拟，用于测试学习流程。正式版本会根据你的 summary 实时生成修改建议，并提取可收藏的短语或句型。</p>
+                        <p>当前为原型模拟。正式版本会根据你的 summary 实时生成修改建议，并提取可收藏的短语或句型。</p>
                       ) : (
                         <>
                           <div className="revision-card">
@@ -986,9 +987,7 @@ function App() {
                     </div>
                   </div>
                 </section>
-              </article>
 
-              <aside className="context-panel">
                 <section>
                   <div className="section-heading compact"><h3>本文生词</h3><span>{currentWords.length}</span></div>
                   <div className="word-list">
