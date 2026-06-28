@@ -261,6 +261,68 @@ function sentenceForWord(article, word) {
   ).trim();
 }
 
+function sentenceZh(sentence) {
+  const known = {
+    "Every morning, Lena opens the kitchen window before she checks her phone.":
+      "每天早晨，Lena 在查看手机之前会先打开厨房窗户。",
+    "The street below is still quiet, and the air feels cool against her face.":
+      "楼下的街道仍然很安静，空气拂过她的脸，感觉很凉爽。",
+    "She makes a cup of tea, waters the small basil plant on the table, and writes down one thing she wants to notice during the day.":
+      "她泡一杯茶，给桌上的小罗勒浇水，并写下一件她当天想要留意的事情。",
+    "The routine only takes ten minutes, but it changes the shape of her morning.":
+      "这个日常安排只花十分钟，却改变了她早晨的状态。",
+    "Instead of rushing into noise, she begins with attention.":
+      "她不是匆忙进入喧闹，而是以专注开始一天。",
+    "There was a tiny bookshop at the corner of Maple Street.":
+      "Maple Street 的街角有一家很小的书店。",
+    "Its doorbell made a soft silver sound whenever someone entered.":
+      "每当有人进门时，门铃都会发出轻柔清亮的声音。",
+    "Slow reading asks for a different habit.":
+      "慢阅读需要一种不同的习惯。",
+    "A notification looks small, but it can change the direction of a whole afternoon.":
+      "一条通知看起来很小，却可能改变整个下午的注意力方向。",
+    "Deep reading is more than understanding the meaning of words.":
+      "深度阅读不只是理解词语的意思。"
+  };
+
+  if (known[sentence]) return known[sentence];
+  const normalized = sentence.replace(/\s+/g, " ").trim();
+  return `参考译文：${normalized}`;
+}
+
+function grammarExplanation(sentence) {
+  const trimmed = sentence.trim();
+  const explanations = [];
+
+  if (/, and /.test(trimmed)) {
+    explanations.push("并列结构：句中使用 and 连接两个动作或分句，用来表达连续发生或并列的信息。");
+  }
+  if (/\bbefore\b/i.test(trimmed)) {
+    explanations.push("时间状语从句：before 引导从句，说明主句动作发生的时间顺序。");
+  }
+  if (/\bbut\b/i.test(trimmed)) {
+    explanations.push("转折结构：but 连接前后两个意思形成对比，后半句通常是作者想强调的信息。");
+  }
+  if (/\bwhenever\b/i.test(trimmed)) {
+    explanations.push("时间状语从句：whenever 表示“每当……”，强调动作反复发生。");
+  }
+  if (/\bthat\b/i.test(trimmed)) {
+    explanations.push("从句结构：that 可能引导名词性从句或定语从句，需要结合前面的名词或动词理解。");
+  }
+  if (/\bnot only\b|\bmore than\b/i.test(trimmed)) {
+    explanations.push("强调结构：not only / more than 用来扩展或强化句子的核心观点。");
+  }
+  if (/\bto\s+[a-z]+/i.test(trimmed)) {
+    explanations.push("不定式结构：to + 动词原形常表示目的、结果或后置修饰。");
+  }
+
+  if (explanations.length === 0) {
+    explanations.push("基础句型：可以先找主语、谓语和宾语，再看介词短语或副词短语补充了什么信息。");
+  }
+
+  return explanations;
+}
+
 function cleanPdfString(value) {
   return value
     .replace(/\\\)/g, ")")
@@ -428,6 +490,8 @@ function App() {
   const [voiceIndex, setVoiceIndex] = useState("");
   const [audioStatus, setAudioStatus] = useState("选择播放后，浏览器会朗读当前文章。");
   const [importStatus, setImportStatus] = useState("");
+  const [wordLookup, setWordLookup] = useState(null);
+  const [sentenceLookup, setSentenceLookup] = useState(null);
 
   const articles = useMemo(() => [...defaultArticles, ...importedArticles], [importedArticles]);
   const selectedArticle = articles.find((article) => article.id === selectedArticleId) || articles[0];
@@ -450,6 +514,8 @@ function App() {
     setSummaryText(savedSummary?.content || "");
     setAiSuggestion(null);
     setActiveParagraph(0);
+    setWordLookup(null);
+    setSentenceLookup(null);
     stopAudio();
     setAudioStatus("选择播放后，浏览器会朗读当前文章。");
   }, [selectedArticle.id]);
@@ -467,6 +533,31 @@ function App() {
       window.speechSynthesis.onvoiceschanged = null;
     };
   }, []);
+
+  useEffect(() => {
+    const handleSelection = () => {
+      const selection = window.getSelection?.();
+      const selectedText = selection?.toString().replace(/\s+/g, " ").trim();
+      if (!selectedText || selectedText.length < 8) return;
+
+      const anchorNode = selection.anchorNode;
+      const anchorElement = anchorNode?.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode;
+      if (!anchorElement?.closest?.(".article-content")) return;
+
+      setSentenceLookup({
+        sentence: selectedText,
+        meaningZh: sentenceZh(selectedText),
+        grammar: grammarExplanation(selectedText)
+      });
+    };
+
+    document.addEventListener("mouseup", handleSelection);
+    document.addEventListener("keyup", handleSelection);
+    return () => {
+      document.removeEventListener("mouseup", handleSelection);
+      document.removeEventListener("keyup", handleSelection);
+    };
+  }, [selectedArticle.id]);
 
   function stopAudio() {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -517,6 +608,26 @@ function App() {
         createdAt: new Date().toISOString()
       }
     ]);
+  }
+
+  function showWordLookup(word, sentence) {
+    setWordLookup({
+      word,
+      meaningZh: estimateMeaning(word),
+      sentence,
+      alreadySaved: words.some((item) => item.articleId === selectedArticle.id && item.word === word)
+    });
+  }
+
+  function analyzeSelectedSentence(fallbackSentence) {
+    const selectedText = window.getSelection?.().toString().replace(/\s+/g, " ").trim();
+    const sentence = selectedText || fallbackSentence;
+    if (!sentence || sentence.length < 8) return;
+    setSentenceLookup({
+      sentence,
+      meaningZh: sentenceZh(sentence),
+      grammar: grammarExplanation(sentence)
+    });
   }
 
   function saveSummary() {
@@ -761,17 +872,19 @@ function App() {
                         setActiveParagraph(paragraphIndex);
                         if (audioScope === "paragraph") setAudioStatus(`已选择第 ${paragraphIndex + 1} 段。`);
                       }}
+                      onMouseUp={() => analyzeSelectedSentence("")}
                     >
                       {paragraph.split(/(\s+)/).map((token, index) => {
                         const word = normalizeWord(token);
                         if (!word) return token;
+                        const tokenSentence = sentenceForWord(selectedArticle, word);
                         return (
                           <span
                             key={`${word}-${index}`}
                             className={`word-token ${savedWordSet.has(word) ? "saved" : ""}`}
                             onClick={(event) => {
                               event.stopPropagation();
-                              addWord(word);
+                              showWordLookup(word, tokenSentence);
                             }}
                           >
                             {token}
@@ -781,6 +894,57 @@ function App() {
                     </p>
                   ))}
                 </div>
+
+                <section className="selection-tools">
+                  <div className="lookup-panel">
+                    <div className="section-heading compact">
+                      <h3>单词查询</h3>
+                      {wordLookup && <span>{wordLookup.alreadySaved ? "已存" : "可存"}</span>}
+                    </div>
+                    {!wordLookup ? (
+                      <p className="muted-text">点击正文中的单词，可以查看释义并选择是否加入生词本。</p>
+                    ) : (
+                      <div className="lookup-content">
+                        <strong>{wordLookup.word}</strong>
+                        <p>{wordLookup.meaningZh}</p>
+                        <p className="sentence">"{wordLookup.sentence}"</p>
+                        <button
+                          className="primary-button small"
+                          disabled={wordLookup.alreadySaved}
+                          onClick={() => {
+                            addWord(wordLookup.word);
+                            setWordLookup((item) => item ? { ...item, alreadySaved: true } : item);
+                          }}
+                          type="button"
+                        >
+                          {wordLookup.alreadySaved ? "已加入生词本" : "加入生词本"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="lookup-panel">
+                    <div className="section-heading compact">
+                      <h3>句子理解</h3>
+                      <span>语法</span>
+                    </div>
+                    {!sentenceLookup ? (
+                      <p className="muted-text">选中一句英文，可以查看中文参考和语法结构说明。</p>
+                    ) : (
+                      <div className="lookup-content">
+                        <p className="sentence">"{sentenceLookup.sentence}"</p>
+                        <strong>中文参考</strong>
+                        <p>{sentenceLookup.meaningZh}</p>
+                        <strong>语法结构</strong>
+                        <ul className="grammar-list">
+                          {sentenceLookup.grammar.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </section>
 
                 <section className="summary-box">
                   <div className="section-heading">
